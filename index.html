@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel: Digital Pet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        #pet {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(to right, #ff69b4, #87ceeb);
+            border-radius: 40% 40% 50% 50% / 40% 40% 60% 60%;
+            margin: 20px auto;
+            position: relative;
+            transform: rotate(45deg);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: rotate(45deg) scale(1); }
+            50% { transform: rotate(45deg) scale(1.05); }
+        }
+        #face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-45deg);
+        }
+        #eye {
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background-color: black;
+            border-radius: 50%;
+            top: 60px;
+            right: 60px;
+            animation: blink 20s infinite;
+        }
+        @keyframes blink {
+            0%, 96%, 98% {transform: scaleY(1);}
+            97%, 99% {transform: scaleY(0.1);}
+        }
+        #mouth {
+            position: absolute;
+            width: 60px;
+            height: 30px;
+            border-bottom: 10px solid black;
+            border-radius: 0 0 100px 100px;
+            bottom: 50px;
+            left: 70px;
+            transition: all 0.3s ease;
+        }
+        .mouth-flat {
+            height: 0 !important;
+            border-bottom: 5px solid black !important;
+            border-radius: 0 !important;
+        }
+        .mouth-frown {
+            border-top: 10px solid black !important;
+            border-bottom: none !important;
+            border-radius: 100px 100px 0 0 !important;
+            bottom: 60px !important;
+        }
+        #speech-bubble {
+            position: absolute;
+            background-color: white;
+            border: 2px solid black;
+            border-radius: 10px;
+            padding: 5px 10px;
+            max-width: 150px;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            font-size: 14px;
+        }
+        #speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border: 8px solid transparent;
+            border-top-color: black;
+            border-bottom: 0;
+            margin-left: -8px;
+            margin-bottom: -8px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+        }
+        #battery {
+            width: 30px;
+            height: 15px;
+            border: 2px solid #333;
+            padding: 2px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        #battery-level {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        #battery:after {
+            content: '';
+            height: 6px;
+            width: 3px;
+            background: #333;
+            display: block;
+            position: relative;
+            top: -17px;
+            right: -32px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Pixel: Digital Pet</h1>
+        <div id="pet">
+            <div id="face">
+                <div id="eye"></div>
+                <div id="mouth"></div>
+            </div>
+            <div id="speech-bubble"></div>
+        </div>
+        <div id="stats">
+            <div class="stat">Happiness: <span id="happiness">50</span>%</div>
+            <div class="stat">Energy: <span id="energy">50</span>%</div>
+            <div class="stat">Health: 
+                <div id="battery">
+                    <div id="battery-level"></div>
+                </div>
+            </div>
+        </div>
+        <button onclick="feed()">Feed Pixel</button>
+        <button onclick="play()">Play with Pixel</button>
+        <button onclick="sleep()">Let Pixel Sleep</button>
+    </div>
+
+    <script>
+        let happiness = 50;
+        let energy = 50;
+        let messageTimer = null;
+
+        function updateStats() {
+            document.getElementById('happiness').textContent = happiness;
+            document.getElementById('energy').textContent = energy;
+            updateMood();
+            updateHealth();
+        }
+
+        function updateMood() {
+            const mouth = document.getElementById('mouth');
+            const averageState = (happiness + energy) / 2;
+
+            if (averageState >= 75) {
+                mouth.className = '';
+                showSpeechBubble("I'm feeling great!");
+            } else if (averageState >= 40) {
+                mouth.className = 'mouth-flat';
+            } else {
+                mouth.className = 'mouth-frown';
+                showSpeechBubble("I'm not feeling well...");
+            }
+        }
+
+        function updateHealth() {
+            const health = (happiness + energy) / 2;
+            const batteryLevel = document.getElementById('battery-level');
+            batteryLevel.style.width = health + '%';
+            
+            if (health > 66) {
+                batteryLevel.style.backgroundColor = '#4CAF50';
+            } else if (health > 33) {
+                batteryLevel.style.backgroundColor = '#FFC107';
+            } else {
+                batteryLevel.style.backgroundColor = '#F44336';
+            }
+        }
+
+        function showSpeechBubble(message) {
+            const bubble = document.getElementById('speech-bubble');
+            bubble.textContent = message;
+            bubble.style.opacity = 1;
+            
+            if (messageTimer) {
+                clearTimeout(messageTimer);
+            }
+            
+            messageTimer = setTimeout(() => {
+                bubble.style.opacity = 0;
+                messageTimer = null;
+            }, 60000);
+        }
+
+        function feed() {
+            happiness = Math.min(100, happiness + 10);
+            energy = Math.min(100, energy + 20);
+            updateStats();
+            showSpeechBubble("Yum! Thank you!");
+        }
+
+        function play() {
+            if (energy >= 20) {
+                happiness = Math.min(100, happiness + 20);
+                energy = Math.max(0, energy - 20);
+                updateStats();
+                showSpeechBubble("Wheee! That was fun!");
+            } else {
+                showSpeechBubble("I'm too tired...");
+            }
+        }
+
+        function sleep() {
+            energy = 100;
+            happiness = Math.max(0, happiness - 10);
+            updateStats();
+            showSpeechBubble("Zzz... Good nap!");
+        }
+
+        setInterval(() => {
+            if (Math.random() < 0.2) {
+                happiness = Math.max(0, happiness - 5);
+                energy = Math.max(0, energy - 5);
+                updateStats();
+                if ((happiness + energy) / 2 < 30) {
+                    showSpeechBubble("Help me please!");
+                }
+            }
+        }, 5000);
+
+        updateStats();
+    </script>
+</body>
+</html>
